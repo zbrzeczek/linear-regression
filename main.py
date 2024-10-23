@@ -2,60 +2,70 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
-train_path = "train.csv"
-test_path = "test.csv"
-
-train_read = pd.read_csv(train_path)
-test_read = pd.read_csv(test_path)
-
 
 # z pandas moizesz zrobic .nazwa_kolumny i bedzie ci zczytywac te dane wiec nie trzeba brac z csv tej kolumny specjalnie
-#year_column = "model_year" 
-#target_column = "price"
 
-#narysowanie danych
-#plt.scatter(train_read.model_year, train_read.price)
-#plt.show()
+class LinearRegression:
+    def __init__(self):
+        self.weight = None
+        self.bias = None
+        self.TSS = None # total sum of squares
+        self.RSS = None # residual sum of squares
+        self.Error = None # 1 - (rss/tss)
+        self.residual = None
 
-def lossFunction(m, b, points):
-    totalError = 0
-    for i in range(len(points)):
-        x = points.iloc[i].model_year
-        y = points.iloc[i].price
-        totalError += (y - (m*x - b)) ** 2
+    def fit(self, x, y):
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+        
+        # Calculate the terms needed for the slope (b1) and intercept (bo) of the regression line 
+        numerator = np.sum((x - x_mean) * (y - y_mean))
+        denominator = np.sum((x - x_mean) ** 2)
 
-    total = totalError/len(points)
+        # Calculate the slope (b1) and intercept (bo) of the regression line (regression equation)
+        self.weight = numerator / denominator
+        self.bias = y_mean - self.weight * x_mean
+        
+        y_pred = self.bias + self.weight * x
+        self.residual = y - y_pred
+        
+        self.RSS = np.sum(self.residual ** 2)
+        self.TSS = np.sum((y - y_mean) ** 2)
+        self.r2score_ = 1 - (self.RSS / self.TSS)
 
-def gradientDesc(m_now, b_now, points, L):
-    m_gradient = 0
-    b_gradient = 0
+    def output(self, x):
+        x = np.array(x, dtype=float)
+        return x * self.weight + self.bias
 
-    n = len(points)
 
-    for i in range(n):
-        x = points.iloc[i].model_year
-        y = points.iloc[i].price
-        m_gradient += x * (y - (m_now * x + b_now))
-        b_gradient += y - (m_now * x + b_now)
+def main():
+    train_path = "train.csv"
+    test_path = "test.csv"
 
-    m_total = -2/n * m_gradient
-    b_total = -2/n * b_gradient
+    train_read = pd.read_csv(train_path)
+    #test_read = pd.read_csv(test_path)
 
-    m = m_now - m_total * L
-    b = b_now - b_total * L
+    x = train_read.model_year
+    y = train_read.price
 
-    return m, b
+    model = LinearRegression()
+    model.fit(x, y)
+    
+    print("Wpisz rok auta")
+    x_test = input()
 
-m = 0
-b = 0
-L = 0.0001
-epochs = 400
+    pred = model.output(x_test)
 
-for i in range(epochs):
-    if i%50==0:
-        print("Epochs: {i}")
-    m, b = gradientDesc(m, b, train_read, L)
+    print("Twoje auto bedzie kosztować około: ", pred)
 
-plt.scatter(train_read.model_year, train_read.price, color="black")
-plt.plot(list(range(1990, 2030)), [m*x + b for x in range(1990, 2030)], color="red")
-plt.show()
+    '''plt.figure(figsize = (8,6))
+    plt.scatter(x, y, marker='o', color='red')
+    plt.plot(test_read.model_year, pred, color='black',markerfacecolor='red',
+             markersize=10,linestyle='solid')
+    plt.xlabel("Roczniki")
+    plt.ylabel("Ceny")
+    plt.show()''' # rysowanie jak kto l;ubie
+
+     
+if __name__=="__main__":
+    main()
